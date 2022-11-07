@@ -100,3 +100,76 @@ class ImageFileVideoWriter:
 
     def release(self, ):
         self._state["counter"] = 0
+
+        
+def load_image_rgbtfusion(img_file: str) -> np.array:
+    """Image loader used by data module (e.g. image sampler)
+
+    Parameters
+    ----------
+    img_file: str
+        path to image file
+    Returns
+    -------
+    np.array
+        loaded image
+
+    Raises
+    ------
+    FileExistsError
+        invalid image file
+    RuntimeError
+        unloadable image file
+    """
+    if not osp.isfile(img_file):
+        logger.info("Image file %s does not exist." % img_file)
+    # read with OpenCV
+    img = cv2.imread(img_file, cv2.IMREAD_COLOR)
+    if img_file.split('/')[-2] == 'visible':
+        img_file_t = img_file.replace('/visible', '/infrared').replace('v.', 'i.')
+    elif img_file.split('/')[-2] == 'v':
+        img_file_t = img_file.replace('/v', '/i').replace('v.', 'i.')
+    img_t = cv2.imread(img_file_t, cv2.IMREAD_GRAYSCALE)
+    img_t = np.expand_dims(img_t, axis=2)
+    if img.shape[0] != img_t.shape[0]:  # GTOT/occBike img.shape!=img_t.shape
+        img = cv2.resize(img, (img_t.shape[1], img_t.shape[0]))
+    img_4channels = np.concatenate((img, img_t), axis=2)
+
+    if img is None:
+        # retrying
+        for ith in range(_RETRY_NUM):
+            logger.info("cv2 retrying (counter: %d) to load image file: %s" %
+                        (ith + 1, img_file))
+            img = cv2.imread(img_file, cv2.IMREAD_COLOR)
+            if img_file.split('/')[-2] == 'visible':
+                img_file_t = img_file.replace('/visible', '/infrared').replace('v.', 'i.')
+            elif img_file.split('/')[-2] == 'v':
+                img_file_t = img_file.replace('/v', '/i').replace('v.', 'i.')
+            img_t = cv2.imread(img_file_t, cv2.IMREAD_GRAYSCALE)
+            img_t = np.expand_dims(img_t, axis=2)
+            if img.shape[0] != img_t.shape[0]:  # GTOT/occBike img.shape!=img_t.shape
+                img = cv2.resize(img, (img_t.shape[1], img_t.shape[0]))
+            img_4channels = np.concatenate((img, img_t), axis=2)
+            if img is not None:
+                break
+    # read with PIL
+    if img is None:
+        logger.info("PIL used in loading image file: %s" % img_file)
+        img = Image.open(img_file)
+        img = np.array(img)
+        img = img[:, :, [2, 1, 0]]  # RGB -> BGR
+        if img_file.split('/')[-2] == 'visible':
+            img_file_t = img_file.replace('/visible', '/infrared').replace('v.', 'i.')
+        elif img_file.split('/')[-2] == 'v':
+            img_file_t = img_file.replace('/v', '/i').replace('v.', 'i.')
+        img_t = Image.open(img_file_t)
+        img_t = np.array(img_t)
+        img_t = img_t[:, :, 0]  # RGB -> BGR
+        img_t = np.expand_dims(img_t, axis=2)
+        if img.shape[0] != img_t.shape[0]:  # GTOT/occBike img.shape!=img_t.shape
+            img = cv2.resize(img, (img_t.shape[1], img_t.shape[0]))
+        img_4channels = np.concatenate((img, img_t), axis=2)
+    if img is None:
+        logger.info("Fail to load Image file %s" % img_file)
+
+    return img_4channels
