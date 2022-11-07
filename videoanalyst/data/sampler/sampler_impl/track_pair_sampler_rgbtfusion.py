@@ -8,9 +8,9 @@ from loguru import logger
 from PIL import Image
 from yacs.config import CfgNode
 
-from siamfcpp.data.dataset.dataset_base import DatasetBase
-from siamfcpp.evaluation.got_benchmark.datasets import got10k
-from siamfcpp.utils import load_image_rgbtfusion
+from videoanalyst.data.dataset.dataset_base import DatasetBase
+from videoanalyst.evaluation.got_benchmark.datasets import got10k
+from videoanalyst.utils import load_image_rgbtfusion
 
 from ..sampler_base import TRACK_SAMPLERS, VOS_SAMPLERS, SamplerBase
 
