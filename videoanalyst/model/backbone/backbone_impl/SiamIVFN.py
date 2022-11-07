@@ -4,10 +4,10 @@ from loguru import logger
 import torch
 import torch.nn as nn
 
-from siamfcpp.model.backbone.backbone_base import (TRACK_BACKBONES,
+from videoanalyst.model.backbone.backbone_base import (TRACK_BACKBONES,
                                                        VOS_BACKBONES)
-from siamfcpp.model.common_opr.common_block import conv_bn_relu
-from siamfcpp.model.module_base import ModuleBase
+from videoanalyst.model.common_opr.common_block import conv_bn_relu
+from videoanalyst.model.module_base import ModuleBase
 
 
 @VOS_BACKBONES.register
