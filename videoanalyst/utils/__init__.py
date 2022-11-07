@@ -11,5 +11,5 @@ __all__ = [
     load_image, Registry, Timer, load_cfg, md5sum, merge_cfg_into_hps,
     complete_path_wt_root_in_cfg, ensure_dir, average_gradients,
     convert_numpy_to_tensor, convert_tensor_to_numpy, move_data_to_device,
-    unwrap_model, VideoWriter
+    unwrap_model, VideoWriter, load_image_rgbtfusion
 ]
