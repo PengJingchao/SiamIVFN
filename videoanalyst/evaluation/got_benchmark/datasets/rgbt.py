@@ -9,8 +9,6 @@ import six
 from itertools import chain
 import pickle
 
-from ..utils.ioutils import download, extract
-
 
 class RGBT(object):
     r"""`RGBT234 or GTOT Datasets.
