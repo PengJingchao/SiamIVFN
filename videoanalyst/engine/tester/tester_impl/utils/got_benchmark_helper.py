@@ -98,3 +98,101 @@ class PipelineTracker(object):
                 show_frame(image, boxes[f, :])
 
         return boxes, times
+
+    
+class PipelineTrackerRgbtFusion(object):
+    def __init__(self,
+                 name: str,
+                 pipeline: PipelineBase,
+                 is_deterministic: bool = True):
+        """Helper tracker for comptability with
+
+        Parameters
+        ----------
+        name : str
+            [description]
+        pipeline : PipelineBase
+            [description]
+        is_deterministic : bool, optional
+            [description], by default False
+        """
+        self.name = name
+        self.is_deterministic = is_deterministic
+        self.pipeline = pipeline
+
+    def init(self, image: np.array, box):
+        """Initialize pipeline tracker
+
+        Parameters
+        ----------
+        image : np.array
+            image of the first frame
+        box : np.array or List
+            tracking bbox on the first frame
+            formate: (x, y, w, h)
+        """
+        self.pipeline.init(image, box)
+
+    def update(self, image: np.array):
+        """Perform tracking
+
+        Parameters
+        ----------
+        image : np.array
+            image of the current frame
+
+        Returns
+        -------
+        np.array
+            tracking bbox
+            formate: (x, y, w, h)
+        """
+        return self.pipeline.update(image)
+
+    def track(self, img_files: List, box, visualize: bool = False):
+        """Perform tracking on a given video sequence
+
+        Parameters
+        ----------
+        img_files : List
+            list of image file paths of the sequence
+        box : np.array or List
+            box of the first frame
+        visualize : bool, optional
+            Visualize or not on each frame, by default False
+
+        Returns
+        -------
+        [type]
+            [description]
+        """
+        frame_num = len(img_files)
+        boxes = np.zeros((frame_num, 4))
+        boxes[0] = box
+        times = np.zeros(frame_num)
+
+        for f, img_file in enumerate(img_files):
+            # image = Image.open(img_file)
+            # if not image.mode == 'RGB':
+            #     image = image.convert('RGB')
+            image = cv2.imread(img_file, cv2.IMREAD_COLOR)
+            if img_file.split('/')[-2] == 'visible':
+                img_file_t = img_file.replace('/visible', '/infrared').replace('v.', 'i.')
+            elif img_file.split('/')[-2] == 'v':
+                img_file_t = img_file.replace('/v', '/i').replace('v.', 'i.')
+            image_t = cv2.imread(img_file_t, cv2.IMREAD_GRAYSCALE)
+            image_t = np.expand_dims(image_t, axis=2)
+            if image.shape[0] != image_t.shape[0]:  # GTOT/occBike image.shape!=image_t.shape
+                image = cv2.resize(image, (image_t.shape[1], image_t.shape[0]))
+            image_4channels = np.concatenate((image, image_t), axis=2)
+            start_time = time.time()
+            if f == 0:
+                self.init(image_4channels, box)
+            else:
+                boxes[f, :] = self.update(image_4channels)
+            times[f] = time.time() - start_time
+
+            if visualize:
+                show_frame(image, boxes[f, :])
+
+        return boxes, times
